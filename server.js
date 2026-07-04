@@ -3,12 +3,13 @@ const path = require("path");
 
 const app = express();
 const PORT = 3000;
+const ADMIN_USERNAMES = ["swalih"];
 
 app.use(express.static(path.join(__dirname, "public")));
 app.use(express.json());
 
 let users = [
-  { id: 1, username: "Adiiii", password: "pass123", points: 0 },
+  { id: 1, username: "swalih", password: "pass123", points: 0 },
   { id: 2, username: "aaronsk", password: "pass123", points: 0 },
   { id: 3, username: "milano", password: "pass123", points: 0 }
 ];
@@ -99,6 +100,7 @@ let matches = [
 let predictions = [];
 let currentUser = null;
 let chatMessages = [];
+let eventClients = [];
 
 const matchResults = {
   1: { homeScore: null, awayScore: null },
@@ -117,6 +119,54 @@ function getWinner(homeScore, awayScore) {
   return "Draw";
 }
 
+function isAdmin(userId) {
+  const user = users.find((item) => item.id === Number(userId));
+  return Boolean(user && ADMIN_USERNAMES.includes(user.username));
+}
+
+function publicUser(user) {
+  return {
+    id: user.id,
+    username: user.username,
+    points: user.points,
+    isAdmin: ADMIN_USERNAMES.includes(user.username)
+  };
+}
+
+function getPredictionPoints(prediction, result) {
+  if (!result || result.homeScore === null || result.awayScore === null) return 0;
+  if (prediction.homeScore === result.homeScore && prediction.awayScore === result.awayScore) return 10;
+  if (prediction.predictedWinner === getWinner(result.homeScore, result.awayScore)) return 5;
+  return 0;
+}
+
+function recalculatePoints() {
+  users.forEach((user) => {
+    user.points = 0;
+  });
+
+  predictions.forEach((prediction) => {
+    const result = matchResults[prediction.matchId];
+    const points = getPredictionPoints(prediction, result);
+    const user = users.find((item) => item.id === prediction.userId);
+    prediction.awardedPoints = points;
+    if (user) user.points += points;
+  });
+}
+
+function sendLiveEvent(eventName, data) {
+  eventClients.forEach((client) => {
+    client.write(`event: ${eventName}\n`);
+    client.write(`data: ${JSON.stringify(data)}\n\n`);
+  });
+}
+
+function addChatMessage(message) {
+  chatMessages.push(message);
+  if (chatMessages.length > 100) chatMessages.shift();
+  sendLiveEvent("chat", message);
+}
+
 app.post("/login", (req, res) => {
   const { username, password } = req.body;
 
@@ -130,7 +180,7 @@ app.post("/login", (req, res) => {
     return res.status(401).json({ error: "Invalid username or password." });
   }
 
-  res.json({ success: true, user: { id: user.id, username: user.username, points: user.points } });
+  res.json({ success: true, user: publicUser(user) });
 });
 
 app.post("/register", (req, res) => {
@@ -152,7 +202,7 @@ app.post("/register", (req, res) => {
   };
 
   users.push(newUser);
-  res.status(201).json({ success: true, user: { id: newUser.id, username: newUser.username, points: newUser.points } });
+  res.status(201).json({ success: true, user: publicUser(newUser) });
 });
 
 app.get("/leaderboard", (req, res) => {
@@ -168,7 +218,10 @@ app.get("/leaderboard", (req, res) => {
 });
 
 app.get("/matches", (req, res) => {
-  res.json(matches);
+  res.json(matches.map((match) => ({
+    ...match,
+    result: matchResults[match.id] || { homeScore: null, awayScore: null }
+  })));
 });
 
 app.post("/matches", (req, res) => {
@@ -227,11 +280,11 @@ app.post("/predict", (req, res) => {
     homeScore: home,
     awayScore: away,
     predictedWinner: getWinner(home, away),
+    awardedPoints: 0,
     submittedAt: new Date().toISOString(),
     match
   };
 
-  user.points += 5;
   predictions.unshift(prediction);
   res.json({ success: true, prediction, userPoints: user.points });
 });
@@ -247,13 +300,75 @@ app.get("/check-predictions/:userId", (req, res) => {
   const userPredictions = predictions.filter((p) => p.userId === userId);
   const badPredictions = userPredictions.filter((pred) => {
     const result = matchResults[pred.matchId];
-    if (!result.homeScore || !result.awayScore) return false;
+    if (!result || result.homeScore === null || result.awayScore === null) return false;
 
     const scoreDiff = Math.abs(pred.homeScore - result.homeScore) + Math.abs(pred.awayScore - result.awayScore);
     return scoreDiff >= 5;
   });
 
   res.json({ badPredictionCount: badPredictions.length, totalPredictions: userPredictions.length });
+});
+
+app.get("/events", (req, res) => {
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache");
+  res.setHeader("Connection", "keep-alive");
+  res.flushHeaders();
+
+  const client = res;
+  eventClients.push(client);
+  client.write("event: connected\n");
+  client.write("data: {\"success\":true}\n\n");
+
+  req.on("close", () => {
+    eventClients = eventClients.filter((item) => item !== client);
+  });
+});
+
+app.post("/scores/:matchId", (req, res) => {
+  const matchId = Number(req.params.matchId);
+  const { homeScore, awayScore, userId } = req.body;
+  const match = matches.find((item) => item.id === matchId);
+
+  if (!isAdmin(userId)) {
+    return res.status(403).json({ error: "Only the admin can announce match results." });
+  }
+
+  if (!match) {
+    return res.status(404).json({ error: "Match not found." });
+  }
+
+  const home = Number(homeScore);
+  const away = Number(awayScore);
+
+  if (!Number.isInteger(home) || !Number.isInteger(away) || home < 0 || away < 0) {
+    return res.status(400).json({ error: "Scores must be non-negative integers." });
+  }
+
+  matchResults[matchId] = { homeScore: home, awayScore: away };
+  recalculatePoints();
+
+  const awardedPredictions = predictions
+    .filter((prediction) => prediction.matchId === matchId)
+    .map((prediction) => ({
+      username: prediction.username,
+      points: prediction.awardedPoints
+    }));
+
+  const scoreMessage = {
+    id: Date.now(),
+    userId: null,
+    username: "Score Update",
+    message: `${match.homeTeam} ${home} - ${away} ${match.awayTeam}. Points awarded.`,
+    type: "score",
+    matchId,
+    timestamp: new Date().toISOString()
+  };
+
+  addChatMessage(scoreMessage);
+  sendLiveEvent("score", { matchId, homeScore: home, awayScore: away, match, awardedPredictions });
+
+  res.json({ success: true, result: matchResults[matchId], awardedPredictions, announcement: scoreMessage });
 });
 
 app.post("/chat", (req, res) => {
@@ -271,14 +386,13 @@ app.post("/chat", (req, res) => {
     timestamp: new Date().toISOString()
   };
 
-  chatMessages.unshift(chatMessage);
-  if (chatMessages.length > 100) chatMessages.pop();
+  addChatMessage(chatMessage);
 
   res.json({ success: true, message: chatMessage });
 });
 
 app.get("/chat", (req, res) => {
-  res.json(chatMessages.slice(0, 50));
+  res.json(chatMessages.slice(-50));
 });
 
 app.listen(PORT, () => {

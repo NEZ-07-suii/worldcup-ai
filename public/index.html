@@ -3,22 +3,26 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>⚽ Nez FIFA - World Cup Predictions</title>
+  <title>Nez FIFA - World Cup Predictions</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <!-- Login/Register Page -->
   <div id="authPage" class="page">
     <div class="auth-container">
-      <div class="trophy-decoration">🏆</div>
+      <img class="official-logo-mark" src="world-cup-26-logo.svg" alt="FIFA World Cup 26" />
       <h1 class="auth-title">NEZ FIFA</h1>
-      <p class="auth-subtitle">🌍 Predict. Compete. Dominate. 🌍</p>
+      <p class="auth-subtitle">Predict. Compete. Dominate.</p>
+
+      <div class="quick-login">
+        <p>Quick login</p>
+        <div id="quickLoginButtons" class="quick-login-buttons"></div>
+      </div>
+
       <div class="auth-tabs">
         <button id="loginTab" class="auth-tab-btn active" data-tab="login">Login</button>
         <button id="registerTab" class="auth-tab-btn" data-tab="register">Register</button>
       </div>
 
-      <!-- Login Form -->
       <form id="loginForm" class="auth-form" style="display: block;">
         <input type="text" id="loginUsername" placeholder="Username" required />
         <input type="password" id="loginPassword" placeholder="Password" required />
@@ -26,7 +30,6 @@
         <p id="loginError" class="auth-error"></p>
       </form>
 
-      <!-- Register Form -->
       <form id="registerForm" class="auth-form" style="display: none;">
         <input type="text" id="registerUsername" placeholder="Username" required />
         <input type="password" id="registerPassword" placeholder="Password" required />
@@ -36,24 +39,22 @@
     </div>
   </div>
 
-  <!-- Main App Page -->
   <div id="mainPage" class="page" style="display: none;">
     <nav class="navbar">
       <div class="nav-left">
         <div class="fifa-logo">
-          <span class="trophy-infinity">🏆</span>
+          <img class="nav-official-logo" src="world-cup-26-logo.svg" alt="FIFA World Cup 26" />
           <h1 class="nav-logo">NEZ FIFA</h1>
         </div>
       </div>
       <div class="nav-right">
-        <button id="leaderboardBtn" class="nav-btn">🏆 Leaderboard</button>
-        <button id="homeBtn" class="nav-btn">🏠 Home</button>
+        <button id="leaderboardBtn" class="nav-btn">Leaderboard</button>
+        <button id="homeBtn" class="nav-btn">Home</button>
         <span id="userDisplay" class="user-display"></span>
-        <button id="logoutBtn" class="nav-btn logout-btn">🚪 Logout</button>
+        <button id="logoutBtn" class="nav-btn logout-btn">Logout</button>
       </div>
     </nav>
 
-    <!-- Home Page (Predictions) -->
     <div id="homePage" class="content-page">
       <div id="skillIssueAlert" class="skill-issue-alert" style="display: none;"></div>
 
@@ -73,7 +74,7 @@
         </section>
 
         <section class="panel chat-panel">
-          <h2>💬 Live Chat</h2>
+          <h2>Live Chat</h2>
           <div id="chatMessages" class="chat-messages"></div>
           <form id="chatForm" class="chat-form">
             <input type="text" id="chatInput" placeholder="Share your thoughts..." maxlength="300" />
@@ -83,11 +84,10 @@
       </div>
     </div>
 
-    <!-- Leaderboard Page -->
     <div id="leaderboardPage" class="content-page" style="display: none;">
       <div class="page-shell">
         <header class="hero">
-          <h2 class="leaderboard-title">🏆 Global Leaderboard</h2>
+          <h2 class="leaderboard-title">Global Leaderboard</h2>
         </header>
 
         <section class="panel">

@@ -1,0 +1,8 @@
+<svg width="160" height="160" viewBox="0 0 160 160" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title">
+  <title id="title">FIFA World Cup 26 logo placeholder</title>
+  <rect width="160" height="160" rx="28" fill="#f8f8f8"/>
+  <text x="80" y="72" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="58" font-weight="900" fill="#111">26</text>
+  <path d="M74 31c8-6 19-1 19 9 0 7-5 12-9 18-2 4-2 9 1 13l9 13c4 6 0 14-7 14H73c-7 0-11-8-7-14l9-13c3-4 3-9 1-13-4-6-9-11-9-18 0-4 3-7 7-9Z" fill="#c99a2e"/>
+  <path d="M66 112h28l-4 15H70l-4-15Z" fill="#153a36"/>
+  <text x="80" y="146" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="900" fill="#111">FIFA</text>
+</svg>
