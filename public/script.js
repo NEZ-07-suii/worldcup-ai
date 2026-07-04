@@ -230,18 +230,23 @@ function formatDate(dateString) {
 
 async function loadMatches() {
   try {
-    const matches = await apiCall("/matches");
-    renderMatches(matches);
+    const [matches, userPredictions] = await Promise.all([
+      apiCall("/matches"),
+      currentUser && !currentUser.isAdmin ? apiCall(`/my-predictions/${currentUser.id}`) : Promise.resolve([])
+    ]);
+    renderMatches(matches, userPredictions);
   } catch (error) {
     matchesList.innerHTML = '<p class="empty-state">Unable to load matches</p>';
   }
 }
 
-function renderMatches(matches) {
+function renderMatches(matches, userPredictions = []) {
   if (!matches.length) {
     matchesList.innerHTML = '<p class="empty-state">No matches available</p>';
     return;
   }
+
+  const predictionByMatch = new Map(userPredictions.map((prediction) => [Number(prediction.matchId), prediction]));
 
   matchesList.innerHTML = matches.map((match) => `
     <div class="match-card">
@@ -255,7 +260,7 @@ function renderMatches(matches) {
         <p class="match-details">${match.stage}</p>
         ${renderMatchResult(match)}
       </div>
-      ${renderPredictionForm(match)}
+      ${renderPredictionForm(match, predictionByMatch.get(Number(match.id)))}
       ${renderResultForm(match)}
     </div>
   `).join("");
@@ -298,19 +303,27 @@ function renderFlag(teamName, extraClass = "") {
   return `<span class="flag-badge ${extraClass}" title="${escapeHtml(teamName)}">${flagImg}<span>${meta.display}</span></span>`;
 }
 
-function renderPredictionForm(match) {
+function renderPredictionForm(match, existingPrediction) {
   if (currentUser && currentUser.isAdmin) {
     return `<p class="admin-only-note">Host mode: post the final score after the match.</p>`;
   }
 
+  const isClosed = match.result && match.result.homeScore !== null && match.result.awayScore !== null;
+  const homeValue = existingPrediction ? existingPrediction.homeScore : "";
+  const awayValue = existingPrediction ? existingPrediction.awayScore : "";
+  const savedMessage = existingPrediction
+    ? `<p class="locked-pick">Your locked pick: ${existingPrediction.homeScore} - ${existingPrediction.awayScore}</p>`
+    : "";
+
   return `
     <form class="prediction-form" data-match-id="${match.id}">
+      ${savedMessage}
       <div class="prediction-inputs">
-        <input type="number" min="0" max="10" placeholder="0" required />
+        <input type="number" min="0" max="10" placeholder="0" value="${homeValue}" ${isClosed ? "disabled" : ""} required />
         <span class="score-divider">:</span>
-        <input type="number" min="0" max="10" placeholder="0" required />
+        <input type="number" min="0" max="10" placeholder="0" value="${awayValue}" ${isClosed ? "disabled" : ""} required />
       </div>
-      <button type="submit" class="predict-btn">Predict</button>
+      <button type="submit" class="predict-btn" ${isClosed ? "disabled" : ""}>${existingPrediction ? "Update Pick" : "Predict"}</button>
       <p class="form-message"></p>
     </form>
   `;
@@ -375,10 +388,9 @@ async function submitPrediction(event) {
     }, 500);
 
     messageDiv.textContent = "Pick locked. Receipts open after the final result.";
-    form.reset();
+    loadMatches();
 
     setTimeout(() => {
-      messageDiv.textContent = "";
       loadPredictions();
     }, 2000);
   } catch (error) {

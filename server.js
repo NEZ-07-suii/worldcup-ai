@@ -271,6 +271,17 @@ app.get("/predictions", (req, res) => {
   res.json(predictions.filter((prediction) => isSettledResult(matchResults[prediction.matchId])).map(publicPrediction));
 });
 
+app.get("/my-predictions/:userId", (req, res) => {
+  const userId = Number(req.params.userId);
+  const user = users.find((item) => item.id === userId);
+
+  if (!user) {
+    return res.status(404).json({ error: "User not found." });
+  }
+
+  res.json(predictions.filter((prediction) => prediction.userId === userId).map(publicPrediction));
+});
+
 app.post("/predict", (req, res) => {
   const { userId, matchId, homeScore, awayScore } = req.body;
   
