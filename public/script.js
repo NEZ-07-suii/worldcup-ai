@@ -3,12 +3,6 @@ let currentUser = null;
 let liveEvents = null;
 let seenChatMessageIds = new Set();
 
-const quickLoginUsers = [
-  { username: "swalih", password: "pass123" },
-  { username: "aaronsk", password: "pass123" },
-  { username: "milano", password: "pass123" }
-];
-
 // DOM Elements
 const authPage = document.getElementById("authPage");
 const mainPage = document.getElementById("mainPage");
@@ -20,7 +14,6 @@ const loginForm = document.getElementById("loginForm");
 const registerForm = document.getElementById("registerForm");
 const loginTab = document.getElementById("loginTab");
 const registerTab = document.getElementById("registerTab");
-const quickLoginButtons = document.getElementById("quickLoginButtons");
 
 const matchesList = document.getElementById("matchesList");
 const predictionsList = document.getElementById("predictionsList");
@@ -47,22 +40,6 @@ async function apiCall(url, options = {}) {
   }
 
   return data;
-}
-
-function setupQuickLogin() {
-  quickLoginButtons.innerHTML = quickLoginUsers
-    .map((user) => `<button type="button" data-username="${user.username}" data-password="${user.password}">${user.username}</button>`)
-    .join("");
-
-  quickLoginButtons.addEventListener("click", (event) => {
-    const button = event.target.closest("button");
-    if (!button) return;
-
-    document.getElementById("loginUsername").value = button.dataset.username;
-    document.getElementById("loginPassword").value = button.dataset.password;
-    loginTab.click();
-    loginForm.requestSubmit();
-  });
 }
 
 loginTab.addEventListener("click", () => {
@@ -505,7 +482,6 @@ function escapeHtml(text) {
 }
 
 function init() {
-  setupQuickLogin();
   authPage.style.display = "flex";
   mainPage.style.display = "none";
 }
