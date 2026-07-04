@@ -32,6 +32,7 @@ const emojiButtons = document.querySelectorAll(".emoji-btn");
 const userDisplay = document.getElementById("userDisplay");
 const logoutBtn = document.getElementById("logoutBtn");
 const leaderboardBtn = document.getElementById("leaderboardBtn");
+const heroLeaderboardBtn = document.getElementById("heroLeaderboardBtn");
 const homeBtn = document.getElementById("homeBtn");
 
 const teamCodes = {
@@ -157,10 +158,20 @@ logoutBtn.addEventListener("click", () => {
 });
 
 leaderboardBtn.addEventListener("click", () => {
+  showLeaderboardPage();
+});
+
+if (heroLeaderboardBtn) {
+  heroLeaderboardBtn.addEventListener("click", () => {
+    showLeaderboardPage();
+  });
+}
+
+function showLeaderboardPage() {
   homePage.style.display = "none";
   leaderboardPage.style.display = "block";
   loadLeaderboard();
-});
+}
 
 homeBtn.addEventListener("click", () => {
   leaderboardPage.style.display = "none";
@@ -466,7 +477,7 @@ function renderRevealedPrediction(prediction) {
 
 function renderLiveScoreUpdate(update) {
   if (!liveUpdateText || !update || !update.match) return;
-  liveUpdateText.textContent = `${update.match.homeTeam} ${update.homeScore} - ${update.awayScore} ${update.match.awayTeam}. Table refreshed.`;
+  liveUpdateText.textContent = `${update.match.homeTeam} ${update.homeScore} - ${update.awayScore} ${update.match.awayTeam}. Leaderboard refreshed.`;
 }
 
 function renderLatestMatchUpdate(matches) {

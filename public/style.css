@@ -2231,3 +2231,207 @@ body {
     margin-top: 16px;
   }
 }
+
+/* World Cup stadium theme */
+body {
+  background:
+    linear-gradient(rgba(5, 20, 56, 0.72), rgba(7, 37, 31, 0.88)),
+    radial-gradient(circle at 16% 6%, rgba(255, 255, 255, 0.6) 0 2px, transparent 2.4px),
+    radial-gradient(circle at 84% 6%, rgba(255, 255, 255, 0.6) 0 2px, transparent 2.4px),
+    linear-gradient(120deg, rgba(0, 88, 165, 0.96), rgba(0, 130, 93, 0.96) 56%, rgba(151, 25, 51, 0.9));
+  background-attachment: fixed;
+  color: #ffffff;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 72px 0 auto;
+  height: 360px;
+  pointer-events: none;
+  background:
+    url("world-cup-26-logo.svg") center 34px / 180px auto no-repeat,
+    linear-gradient(115deg, transparent 0 31%, rgba(255, 255, 255, 0.18) 31.2% 32%, transparent 32.2%),
+    linear-gradient(65deg, transparent 0 68%, rgba(255, 255, 255, 0.16) 68.2% 69%, transparent 69.2%);
+  opacity: 0.2;
+  z-index: -1;
+}
+
+.fifa-topbar {
+  background: linear-gradient(90deg, #07195d, #006cb8 55%, #00843d);
+  border-bottom: 3px solid #f8d15a;
+}
+
+.menu-btn {
+  background: #f8d15a;
+  color: #07195d;
+}
+
+.fifa-wordmark,
+.nav-btn:hover,
+.user-display {
+  color: #ffffff;
+}
+
+.topbar-links span:not(.user-display),
+.nav-btn {
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.predictor-hero {
+  background:
+    linear-gradient(rgba(5, 14, 50, 0.28), rgba(5, 14, 50, 0.64)),
+    radial-gradient(circle at 50% 118%, rgba(33, 185, 105, 0.72) 0 23%, transparent 23.4%),
+    linear-gradient(135deg, #015dab 0%, #00843d 58%, #971933 100%);
+  border-bottom: 3px solid #f8d15a;
+}
+
+.predictor-hero::before {
+  opacity: 0.42;
+  background:
+    linear-gradient(90deg, transparent 0 48%, rgba(255, 255, 255, 0.5) 48% 52%, transparent 52%),
+    radial-gradient(circle at center, transparent 0 35%, rgba(255, 255, 255, 0.4) 35.5% 36.5%, transparent 37%);
+}
+
+.hero-kicker,
+.score-divider,
+.prediction-pick span,
+.prediction-score,
+.chat-message strong,
+.voice-message span,
+.leaderboard-rank,
+.auth-tab-btn.active,
+.prediction-item strong,
+.score-announcement strong,
+.live-score,
+.points-result,
+.leaderboard-points {
+  color: #f8d15a;
+}
+
+.predictor-copy p,
+.live-strip p,
+.predictor-feature-card p,
+.auth-subtitle,
+.match-details,
+.chat-message p {
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.predict-now-btn,
+.hero-leaderboard-btn,
+.auth-submit,
+.predict-btn,
+.prediction-form button,
+.chat-form button,
+.result-btn,
+.vs-badge,
+.champion-badge,
+.current-badge {
+  background: #f8d15a;
+  color: #07195d;
+}
+
+.hero-leaderboard-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 52px;
+  padding: 14px 24px;
+  border: 2px solid rgba(255, 255, 255, 0.72);
+  border-radius: 8px;
+  font-size: 1.05rem;
+  font-weight: 950;
+  cursor: pointer;
+  box-shadow: 8px 8px 0 rgba(0, 0, 0, 0.28);
+}
+
+.hero-leaderboard-btn:hover,
+.predict-now-btn:hover {
+  transform: translateY(-2px);
+}
+
+.creator-pill {
+  border-color: rgba(255, 255, 255, 0.5);
+  background: rgba(7, 25, 93, 0.52);
+}
+
+.hero-scoreboard {
+  background: rgba(255, 255, 255, 0.96);
+  border-color: #f8d15a;
+  box-shadow: 14px 14px 0 rgba(7, 25, 93, 0.55);
+}
+
+.creator-avatar {
+  background: #07195d;
+  color: #f8d15a;
+}
+
+.creator-avatar.nez {
+  background: #00843d;
+  color: #ffffff;
+}
+
+.auth-container,
+.panel,
+.live-strip,
+.match-card,
+.prediction-item,
+.leaderboard-item,
+.champion-item,
+.predictor-feature-card {
+  background: rgba(7, 25, 93, 0.82);
+  border-color: rgba(248, 209, 90, 0.28);
+}
+
+.panel,
+.match-card,
+.leaderboard-item {
+  backdrop-filter: blur(16px);
+}
+
+.team,
+.prediction-pick,
+.chat-message,
+.prediction-group {
+  background: rgba(1, 35, 77, 0.68);
+}
+
+.match-card:hover,
+.prediction-item:hover,
+.leaderboard-item:hover {
+  border-color: #f8d15a;
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.24);
+}
+
+#leaderboardPage::before {
+  content: "";
+  inset: 80px 0 auto;
+  width: auto;
+  height: 420px;
+  background: url("world-cup-26-logo.svg") center top / 220px auto no-repeat;
+  opacity: 0.12;
+  transform: none;
+}
+
+.leaderboard-title {
+  font-size: clamp(2rem, 5vw, 4.2rem);
+  color: #ffffff;
+  text-shadow: 0 4px 22px rgba(0, 0, 0, 0.36);
+}
+
+@media (max-width: 768px) {
+  body::before {
+    inset: 54px 0 auto;
+    height: 260px;
+    background-size: 120px auto, auto, auto;
+  }
+
+  .hero-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-leaderboard-btn {
+    width: 100%;
+  }
+}
