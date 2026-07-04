@@ -2,16 +2,17 @@ const express = require("express");
 const path = require("path");
 
 const app = express();
-const PORT = 3000;
-const ADMIN_USERNAMES = ["swalih"];
+const PORT = Number(process.env.PORT || process.argv[2]) || 3000;
+const ADMIN_USERNAMES = ["admin"];
 
 app.use(express.static(path.join(__dirname, "public")));
 app.use(express.json());
 
 let users = [
-  { id: 1, username: "swalih", password: "pass123", points: 0 },
-  { id: 2, username: "aaronsk", password: "pass123", points: 0 },
-  { id: 3, username: "milano", password: "pass123", points: 0 }
+  { id: 1, username: "admin", password: "pass123", points: 0 },
+  { id: 2, username: "swalih", password: "pass123", points: 0 },
+  { id: 3, username: "aaronsk", password: "pass123", points: 0 },
+  { id: 4, username: "milano", password: "pass123", points: 0 }
 ];
 
 let matches = [
@@ -121,7 +122,11 @@ function getWinner(homeScore, awayScore) {
 
 function isAdmin(userId) {
   const user = users.find((item) => item.id === Number(userId));
-  return Boolean(user && ADMIN_USERNAMES.includes(user.username));
+  return Boolean(user && isAdminUsername(user.username));
+}
+
+function isAdminUsername(username) {
+  return ADMIN_USERNAMES.includes(String(username || "").trim().toLowerCase());
 }
 
 function publicUser(user) {
@@ -129,7 +134,7 @@ function publicUser(user) {
     id: user.id,
     username: user.username,
     points: user.points,
-    isAdmin: ADMIN_USERNAMES.includes(user.username)
+    isAdmin: isAdminUsername(user.username)
   };
 }
 
@@ -174,7 +179,7 @@ app.post("/login", (req, res) => {
     return res.status(400).json({ error: "Username and password are required." });
   }
 
-  const user = users.find((u) => u.username === username && u.password === password);
+  const user = users.find((u) => u.username.toLowerCase() === username.toLowerCase() && u.password === password);
 
   if (!user) {
     return res.status(401).json({ error: "Invalid username or password." });
@@ -190,7 +195,7 @@ app.post("/register", (req, res) => {
     return res.status(400).json({ error: "Username and password are required." });
   }
 
-  if (users.find((u) => u.username === username)) {
+  if (users.find((u) => u.username.toLowerCase() === username.toLowerCase())) {
     return res.status(400).json({ error: "Username already exists." });
   }
 
@@ -207,12 +212,13 @@ app.post("/register", (req, res) => {
 
 app.get("/leaderboard", (req, res) => {
   const leaderboard = users
-    .filter((user) => predictions.some((p) => p.userId === user.id))
+    .filter((user) => !isAdminUsername(user.username) && predictions.some((p) => p.userId === user.id))
     .sort((a, b) => b.points - a.points)
     .map((user, index) => ({
       rank: index + 1,
       username: user.username,
-      points: user.points
+      points: user.points,
+      isChampion: index === 0
     }));
   res.json(leaderboard);
 });
@@ -225,7 +231,11 @@ app.get("/matches", (req, res) => {
 });
 
 app.post("/matches", (req, res) => {
-  const { homeTeam, awayTeam, date, stage, venue } = req.body;
+  const { homeTeam, awayTeam, date, stage, venue, userId } = req.body;
+
+  if (!isAdmin(userId)) {
+    return res.status(403).json({ error: "Only the admin can manage matches." });
+  }
 
   if (!homeTeam || !awayTeam || !date) {
     return res.status(400).json({ error: "Home team, away team, and date are required." });
@@ -260,9 +270,18 @@ app.post("/predict", (req, res) => {
     return res.status(404).json({ error: "User not found." });
   }
 
+  if (isAdminUsername(user.username)) {
+    return res.status(403).json({ error: "Admin can only announce match results." });
+  }
+
   const match = matches.find((item) => String(item.id) === String(matchId));
   if (!match) {
     return res.status(404).json({ error: "Match not found." });
+  }
+
+  const result = matchResults[Number(matchId)];
+  if (result && result.homeScore !== null && result.awayScore !== null) {
+    return res.status(400).json({ error: "Predictions are closed after the final score is announced." });
   }
 
   const home = Number(homeScore);
@@ -373,6 +392,10 @@ app.post("/scores/:matchId", (req, res) => {
 
 app.post("/chat", (req, res) => {
   const { userId, username, message } = req.body;
+
+  if (isAdmin(userId)) {
+    return res.status(403).json({ error: "Admin can only post official score announcements." });
+  }
 
   if (!message || message.trim().length === 0) {
     return res.status(400).json({ error: "Message cannot be empty." });

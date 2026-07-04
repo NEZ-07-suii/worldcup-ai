@@ -27,6 +27,25 @@ const logoutBtn = document.getElementById("logoutBtn");
 const leaderboardBtn = document.getElementById("leaderboardBtn");
 const homeBtn = document.getElementById("homeBtn");
 
+const teamCodes = {
+  Argentina: "ARG",
+  Belgium: "BEL",
+  Brazil: "BRA",
+  Canada: "CAN",
+  Colombia: "COL",
+  Egypt: "EGY",
+  England: "ENG",
+  France: "FRA",
+  Mexico: "MEX",
+  Morocco: "MAR",
+  Norway: "NOR",
+  Paraguay: "PAR",
+  Portugal: "POR",
+  Spain: "ESP",
+  Switzerland: "SUI",
+  USA: "USA"
+};
+
 async function apiCall(url, options = {}) {
   const response = await fetch(url, {
     headers: { "Content-Type": "application/json" },
@@ -144,7 +163,7 @@ homeBtn.addEventListener("click", () => {
 function showMainPage() {
   authPage.style.display = "none";
   mainPage.style.display = "block";
-  userDisplay.textContent = currentUser.isAdmin ? `${currentUser.username} Admin` : currentUser.username;
+  userDisplay.innerHTML = renderUsername(currentUser.username, currentUser.isAdmin);
   loadMatches();
   loadPredictions();
   loadChat();
@@ -208,29 +227,15 @@ function renderMatches(matches) {
     <div class="match-card">
       <div class="match-info">
         <div class="match-teams">
-          <div class="team home-team">
-            <span class="flag">${match.homeFlag || ""}</span>
-            <span class="team-name">${match.homeTeam}</span>
-          </div>
+          ${renderTeam(match.homeTeam, "home-team")}
           <div class="vs-badge">VS</div>
-          <div class="team away-team">
-            <span class="team-name">${match.awayTeam}</span>
-            <span class="flag">${match.awayFlag || ""}</span>
-          </div>
+          ${renderTeam(match.awayTeam, "away-team")}
         </div>
         <p class="match-details">${formatDate(match.date)}</p>
         <p class="match-details">${match.stage}</p>
         ${renderMatchResult(match)}
       </div>
-      <form class="prediction-form" data-match-id="${match.id}">
-        <div class="prediction-inputs">
-          <input type="number" min="0" max="10" placeholder="0" required />
-          <span class="score-divider">:</span>
-          <input type="number" min="0" max="10" placeholder="0" required />
-        </div>
-        <button type="submit" class="predict-btn">Predict</button>
-        <p class="form-message"></p>
-      </form>
+      ${renderPredictionForm(match)}
       ${renderResultForm(match)}
     </div>
   `).join("");
@@ -242,6 +247,37 @@ function renderMatches(matches) {
   document.querySelectorAll(".result-form").forEach((form) => {
     form.addEventListener("submit", submitResult);
   });
+}
+
+function renderTeam(teamName, className = "") {
+  return `
+    <div class="team ${className}">
+      <span class="flag-badge">${getTeamCode(teamName)}</span>
+      <span class="team-name">${escapeHtml(teamName)}</span>
+    </div>
+  `;
+}
+
+function getTeamCode(teamName) {
+  return teamCodes[teamName] || String(teamName || "").slice(0, 3).toUpperCase();
+}
+
+function renderPredictionForm(match) {
+  if (currentUser && currentUser.isAdmin) {
+    return `<p class="admin-only-note">Official account: announce the final score after the match.</p>`;
+  }
+
+  return `
+    <form class="prediction-form" data-match-id="${match.id}">
+      <div class="prediction-inputs">
+        <input type="number" min="0" max="10" placeholder="0" required />
+        <span class="score-divider">:</span>
+        <input type="number" min="0" max="10" placeholder="0" required />
+      </div>
+      <button type="submit" class="predict-btn">Predict</button>
+      <p class="form-message"></p>
+    </form>
+  `;
 }
 
 function renderMatchResult(match) {
@@ -359,11 +395,11 @@ function renderPredictions(predictions) {
 
   predictionsList.innerHTML = predictions.slice(0, 10).map((pred) => `
     <div class="prediction-item">
-      <strong>${pred.username}</strong>
+      <strong>${escapeHtml(pred.username)}</strong>
       <div class="prediction-match">
-        <span class="flag-team">${pred.match.homeFlag || ""} ${pred.match.homeTeam}</span>
+        <span class="flag-team"><span class="flag-badge mini">${getTeamCode(pred.match.homeTeam)}</span>${escapeHtml(pred.match.homeTeam)}</span>
         <span class="prediction-score">${pred.homeScore} - ${pred.awayScore}</span>
-        <span class="flag-team">${pred.match.awayTeam} ${pred.match.awayFlag || ""}</span>
+        <span class="flag-team"><span class="flag-badge mini">${getTeamCode(pred.match.awayTeam)}</span>${escapeHtml(pred.match.awayTeam)}</span>
       </div>
       <small class="prediction-result">${pred.predictedWinner}</small>
       <small class="prediction-result points-result">${pred.awardedPoints || 0} pts awarded</small>
@@ -388,12 +424,16 @@ function renderLeaderboard(leaderboard) {
 
   leaderboardList.innerHTML = leaderboard.map((entry, index) => {
     const rank = index + 1;
-    const isCurrentUser = currentUser && currentUser.username === entry.username ? " Current" : "";
+    const isCurrentUser = currentUser && currentUser.username === entry.username;
+    const medalClass = rank === 1 ? "gold" : rank === 2 ? "silver" : rank === 3 ? "bronze" : "";
+    const itemClass = rank === 1 ? "leaderboard-item champion-item" : "leaderboard-item";
+    const label = rank === 1 ? '<span class="champion-badge">Top Predictor</span>' : "";
+    const currentBadge = isCurrentUser ? '<span class="current-badge">You</span>' : "";
 
     return `
-      <div class="leaderboard-item">
-        <div class="leaderboard-rank">#${rank}</div>
-        <div class="leaderboard-name">${entry.username}${isCurrentUser}</div>
+      <div class="${itemClass}">
+        <div class="leaderboard-rank ${medalClass}">#${rank}</div>
+        <div class="leaderboard-name">${escapeHtml(entry.username)} ${label} ${currentBadge}</div>
         <div class="leaderboard-points">${entry.points} pts</div>
       </div>
     `;
@@ -425,8 +465,24 @@ async function loadChat() {
   try {
     const messages = await apiCall("/chat");
     renderChat(messages);
+    renderChatComposer();
   } catch (error) {
     console.error("Error loading chat:", error);
+  }
+}
+
+function renderChatComposer() {
+  if (!currentUser || !currentUser.isAdmin) {
+    chatForm.style.display = "flex";
+    return;
+  }
+
+  chatForm.style.display = "none";
+  if (!chatMessages.querySelector(".admin-chat-note")) {
+    chatMessages.insertAdjacentHTML(
+      "beforeend",
+      '<p class="admin-chat-note">Official account posts only score announcements.</p>'
+    );
   }
 }
 
@@ -459,7 +515,7 @@ function createChatMessageHtml(msg) {
 
   return `
     <div class="${messageClass}">
-      <strong>${escapeHtml(msg.username)}</strong>
+      <strong>${renderUsername(msg.username, msg.username === "admin")}</strong>
       <p>${escapeHtml(msg.message)}</p>
       <small>${new Date(msg.timestamp).toLocaleTimeString()}</small>
     </div>
@@ -479,6 +535,13 @@ function escapeHtml(text) {
     "'": "&#039;"
   };
   return String(text).replace(/[&<>"']/g, (match) => map[match]);
+}
+
+function renderUsername(username, isAdmin = false) {
+  const safeName = escapeHtml(username);
+  if (!isAdmin) return safeName;
+
+  return `${safeName}<span class="admin-star" title="Official admin" aria-label="Official admin"></span>`;
 }
 
 function init() {
