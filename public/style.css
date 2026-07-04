@@ -62,7 +62,7 @@ body {
 
 .glow-text,
 .auth-title,
-.nav-logo {
+.fifa-wordmark {
   text-shadow:
     0 0 10px rgba(248, 209, 90, 0.48),
     0 0 22px rgba(55, 200, 255, 0.3);
@@ -156,17 +156,17 @@ body {
   position: sticky;
   top: 0;
   z-index: 100;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
 }
 
 .fifa-topbar {
-  min-height: 56px;
+  min-height: 64px;
   background: #07588d;
   color: #ffffff;
   display: grid;
   grid-template-columns: auto auto 1fr;
   align-items: center;
-  gap: 24px;
+  gap: 26px;
   padding: 0 6vw;
 }
 
@@ -180,64 +180,20 @@ body {
 }
 
 .fifa-wordmark {
-  color: #050505;
-  font-size: 2rem;
+  color: #ffffff;
+  font-size: 2.15rem;
   font-weight: 950;
   letter-spacing: 0;
 }
 
-.topbar-links,
-.mainnav-links {
+.topbar-links {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 28px;
-  font-size: 0.9rem;
-  font-weight: 800;
-  white-space: nowrap;
-}
-
-.fifa-mainnav {
-  min-height: 82px;
-  background: #000000;
-  color: #ffffff;
-  display: grid;
-  grid-template-columns: auto 1fr;
-  align-items: center;
-  gap: 34px;
-  padding: 0 6vw;
-}
-
-.fifa-logo {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-
-.nav-official-logo {
-  width: 42px;
-  height: 58px;
-  object-fit: contain;
-}
-
-.nav-logo {
-  font-size: 1.05rem;
+  gap: 30px;
+  font-size: 1rem;
   font-weight: 950;
-  color: #ffffff;
-  background: none;
-  -webkit-text-fill-color: currentColor;
-}
-
-.fifa-subnav {
-  min-height: 76px;
-  background: #151515;
-  display: flex;
-  align-items: center;
-  gap: 42px;
-  padding: 0 9vw;
-  color: #ffffff;
-  font-size: 1.25rem;
-  font-weight: 900;
+  white-space: nowrap;
 }
 
 .nav-btn {
@@ -257,10 +213,10 @@ body {
 }
 
 .nav-btn.logout-btn {
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.14);
   color: #ffffff;
   border-radius: 8px;
-  padding: 9px 16px;
+  padding: 8px 14px;
 }
 
 .user-display {
@@ -1333,24 +1289,14 @@ body {
 }
 
 @media (max-width: 1180px) and (min-width: 769px) {
-  .fifa-topbar,
-  .fifa-mainnav {
+  .fifa-topbar {
     padding-left: 3vw;
     padding-right: 3vw;
   }
 
   .topbar-links {
     gap: 16px;
-    font-size: 0.78rem;
-  }
-
-  .mainnav-links {
-    gap: 18px;
-    font-size: 0.82rem;
-  }
-
-  .mainnav-links span:nth-of-type(n+4) {
-    display: none;
+    font-size: 0.84rem;
   }
 
   .predictor-hero-inner {
@@ -1407,7 +1353,7 @@ body {
   }
 
   .fifa-wordmark {
-    font-size: 1.65rem;
+    font-size: 1.45rem;
   }
 
   .topbar-links {
@@ -1418,40 +1364,7 @@ body {
     scrollbar-width: none;
   }
 
-  .topbar-links span:not(.user-display):nth-child(-n+4) {
-    display: none;
-  }
-
-  .fifa-mainnav {
-    display: grid;
-    grid-template-columns: 1fr;
-    min-height: auto;
-    gap: 10px;
-    padding: 12px 14px;
-  }
-
-  .fifa-logo {
-    justify-content: center;
-  }
-
-  .nav-official-logo {
-    width: 34px;
-    height: 48px;
-  }
-
-  .nav-logo {
-    font-size: 1rem;
-  }
-
-  .mainnav-links {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px;
-    font-size: 0.9rem;
-    white-space: normal;
-  }
-
-  .mainnav-links span {
+  .topbar-links span:not(.user-display):not(:last-of-type) {
     display: none;
   }
 
@@ -1469,13 +1382,6 @@ body {
 
   .user-display {
     overflow-wrap: anywhere;
-  }
-
-  .fifa-subnav {
-    min-height: 46px;
-    padding: 0 14px;
-    gap: 20px;
-    font-size: 1rem;
   }
 
   .sponsor-strip {
