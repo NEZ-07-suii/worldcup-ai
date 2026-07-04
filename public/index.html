@@ -75,17 +75,27 @@
         </section>
 
         <section class="panel">
-          <h2>Recent Predictions</h2>
+          <h2>Revealed Predictions</h2>
           <div id="predictionsList" class="predictions-list"></div>
         </section>
 
         <section class="panel chat-panel">
           <h2>Live Chat</h2>
           <div id="chatMessages" class="chat-messages"></div>
+          <div class="emoji-bar" aria-label="Quick emojis">
+            <button type="button" class="emoji-btn" data-emoji="⚽">⚽</button>
+            <button type="button" class="emoji-btn" data-emoji="🔥">🔥</button>
+            <button type="button" class="emoji-btn" data-emoji="😂">😂</button>
+            <button type="button" class="emoji-btn" data-emoji="👏">👏</button>
+            <button type="button" class="emoji-btn" data-emoji="🏆">🏆</button>
+            <button type="button" class="emoji-btn" data-emoji="💙">💙</button>
+          </div>
           <form id="chatForm" class="chat-form">
             <input type="text" id="chatInput" placeholder="Share your thoughts..." maxlength="300" />
+            <button type="button" id="voiceBtn" class="voice-btn" title="Record voice note">Mic</button>
             <button type="submit">Send</button>
           </form>
+          <p id="voiceStatus" class="voice-status"></p>
         </section>
       </div>
     </div>

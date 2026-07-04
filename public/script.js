@@ -2,6 +2,9 @@
 let currentUser = null;
 let liveEvents = null;
 let seenChatMessageIds = new Set();
+let mediaRecorder = null;
+let recordedChunks = [];
+let recordingStartedAt = 0;
 
 // DOM Elements
 const authPage = document.getElementById("authPage");
@@ -22,6 +25,9 @@ const chatMessages = document.getElementById("chatMessages");
 const chatForm = document.getElementById("chatForm");
 const chatInput = document.getElementById("chatInput");
 const liveUpdateText = document.getElementById("liveUpdateText");
+const voiceBtn = document.getElementById("voiceBtn");
+const voiceStatus = document.getElementById("voiceStatus");
+const emojiButtons = document.querySelectorAll(".emoji-btn");
 
 const userDisplay = document.getElementById("userDisplay");
 const logoutBtn = document.getElementById("logoutBtn");
@@ -357,7 +363,7 @@ async function submitPrediction(event) {
       matchesList.classList.remove("shake-animation");
     }, 500);
 
-    messageDiv.textContent = "Prediction saved. Points are awarded after the final result.";
+    messageDiv.textContent = "Prediction saved privately. It will appear after the final result.";
     form.reset();
 
     setTimeout(() => {
@@ -408,31 +414,54 @@ async function loadPredictions() {
 
 function renderPredictions(predictions) {
   if (!predictions.length) {
-    predictionsList.innerHTML = '<p class="empty-state">No predictions yet. Be the first to predict!</p>';
+    predictionsList.innerHTML = '<p class="empty-state">Predictions are hidden until each match result is announced.</p>';
     return;
   }
 
-  predictionsList.innerHTML = predictions.slice(0, 10).map((pred) => {
-    const hasResult = pred.awardedPoints > 0 || isPredictionSettled(pred);
-    const pointsText = hasResult ? `${pred.awardedPoints || 0} pts awarded` : "Points pending final result";
-
-    return `
-    <div class="prediction-item">
-      <strong>${escapeHtml(pred.username)}</strong>
-      <div class="prediction-match">
-        <span class="flag-team">${renderFlag(pred.match.homeTeam, "mini")}${escapeHtml(pred.match.homeTeam)}</span>
-        <span class="prediction-score">${pred.homeScore} - ${pred.awayScore}</span>
-        <span class="flag-team">${renderFlag(pred.match.awayTeam, "mini")}${escapeHtml(pred.match.awayTeam)}</span>
+  const groupedPredictions = groupPredictionsByMatch(predictions);
+  predictionsList.innerHTML = groupedPredictions.map(({ match, predictions: matchPredictions }) => `
+    <article class="prediction-group">
+      <div class="prediction-group-header">
+        <div class="prediction-match-title">
+          <span class="flag-team">${renderFlag(match.homeTeam, "mini")}${escapeHtml(match.homeTeam)}</span>
+          <span class="prediction-score">vs</span>
+          <span class="flag-team">${renderFlag(match.awayTeam, "mini")}${escapeHtml(match.awayTeam)}</span>
+        </div>
+        <small>${escapeHtml(match.stage || "Match")} predictions revealed</small>
       </div>
-      <small class="prediction-result">${pred.predictedWinner}</small>
-      <small class="prediction-result points-result ${hasResult ? "" : "pending-points"}">${pointsText}</small>
-    </div>
-  `;
-  }).join("");
+      <div class="prediction-group-list">
+        ${matchPredictions.map(renderRevealedPrediction).join("")}
+      </div>
+    </article>
+  `).join("");
 }
 
-function isPredictionSettled(prediction) {
-  return prediction && prediction.settled === true;
+function groupPredictionsByMatch(predictions) {
+  const groups = new Map();
+
+  predictions.forEach((prediction) => {
+    const key = prediction.matchId;
+    if (!groups.has(key)) {
+      groups.set(key, { match: prediction.match, predictions: [] });
+    }
+
+    groups.get(key).predictions.push(prediction);
+  });
+
+  return Array.from(groups.values());
+}
+
+function renderRevealedPrediction(prediction) {
+  return `
+    <div class="prediction-item">
+      <strong>${escapeHtml(prediction.username)}</strong>
+      <div class="prediction-pick">
+        <span>${prediction.homeScore} - ${prediction.awayScore}</span>
+        <small>${prediction.predictedWinner}</small>
+      </div>
+      <small class="prediction-result points-result">${prediction.awardedPoints || 0} pts awarded</small>
+    </div>
+  `;
 }
 
 function renderLiveScoreUpdate(update) {
@@ -495,7 +524,6 @@ chatForm.addEventListener("submit", async (event) => {
       method: "POST",
       body: JSON.stringify({
         userId: currentUser.id,
-        username: currentUser.username,
         message: chatInput.value
       })
     });
@@ -505,6 +533,29 @@ chatForm.addEventListener("submit", async (event) => {
     console.error("Chat error:", error);
   }
 });
+
+emojiButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    insertEmoji(button.dataset.emoji);
+  });
+});
+
+if (voiceBtn) {
+  voiceBtn.addEventListener("click", toggleVoiceRecording);
+  if (!navigator.mediaDevices || !window.MediaRecorder) {
+    voiceBtn.disabled = true;
+    voiceBtn.title = "Voice notes are not supported in this browser";
+  }
+}
+
+function insertEmoji(emoji) {
+  const start = chatInput.selectionStart || chatInput.value.length;
+  const end = chatInput.selectionEnd || chatInput.value.length;
+  chatInput.value = `${chatInput.value.slice(0, start)}${emoji}${chatInput.value.slice(end)}`;
+  chatInput.focus();
+  chatInput.selectionStart = start + emoji.length;
+  chatInput.selectionEnd = start + emoji.length;
+}
 
 async function loadChat() {
   try {
@@ -517,18 +568,7 @@ async function loadChat() {
 }
 
 function renderChatComposer() {
-  if (!currentUser || !currentUser.isAdmin) {
-    chatForm.style.display = "flex";
-    return;
-  }
-
-  chatForm.style.display = "none";
-  if (!chatMessages.querySelector(".admin-chat-note")) {
-    chatMessages.insertAdjacentHTML(
-      "beforeend",
-      '<p class="admin-chat-note">Official account posts only score announcements.</p>'
-    );
-  }
+  chatForm.style.display = "flex";
 }
 
 function renderChat(messages) {
@@ -557,14 +597,108 @@ function appendChatMessage(message) {
 
 function createChatMessageHtml(msg) {
   const messageClass = msg.type === "score" ? "chat-message score-announcement" : "chat-message";
+  const bodyHtml = msg.type === "voice" ? renderVoiceMessage(msg) : `<p>${escapeHtml(msg.message)}</p>`;
 
   return `
     <div class="${messageClass}">
       <strong>${renderUsername(msg.username, msg.username === "admin")}</strong>
-      <p>${escapeHtml(msg.message)}</p>
+      ${bodyHtml}
       <small>${new Date(msg.timestamp).toLocaleTimeString()}</small>
     </div>
   `;
+}
+
+function renderVoiceMessage(msg) {
+  const caption = msg.message ? `<p>${escapeHtml(msg.message)}</p>` : "";
+  const duration = msg.duration ? `<span>${Math.round(msg.duration)}s voice note</span>` : "<span>Voice note</span>";
+
+  return `
+    <div class="voice-message">
+      ${caption}
+      ${duration}
+      <audio controls preload="none" src="${escapeAttribute(msg.audioData)}"></audio>
+    </div>
+  `;
+}
+
+async function toggleVoiceRecording() {
+  if (mediaRecorder && mediaRecorder.state === "recording") {
+    mediaRecorder.stop();
+    return;
+  }
+
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const preferredType = MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm" : "";
+    recordedChunks = [];
+    mediaRecorder = new MediaRecorder(stream, preferredType ? { mimeType: preferredType } : undefined);
+    recordingStartedAt = Date.now();
+
+    mediaRecorder.addEventListener("dataavailable", (event) => {
+      if (event.data.size > 0) recordedChunks.push(event.data);
+    });
+
+    mediaRecorder.addEventListener("stop", () => {
+      stream.getTracks().forEach((track) => track.stop());
+      sendVoiceNote(mediaRecorder.mimeType || "audio/webm");
+    });
+
+    mediaRecorder.start();
+    voiceBtn.classList.add("recording");
+    voiceBtn.textContent = "Stop";
+    voiceStatus.textContent = "Recording voice note...";
+
+    setTimeout(() => {
+      if (mediaRecorder && mediaRecorder.state === "recording") mediaRecorder.stop();
+    }, 30000);
+  } catch (error) {
+    voiceStatus.textContent = "Microphone permission is needed for voice notes.";
+  }
+}
+
+async function sendVoiceNote(audioType) {
+  voiceBtn.classList.remove("recording");
+  voiceBtn.textContent = "Mic";
+
+  if (!recordedChunks.length) {
+    voiceStatus.textContent = "No audio recorded.";
+    return;
+  }
+
+  try {
+    voiceStatus.textContent = "Sending voice note...";
+    const audioBlob = new Blob(recordedChunks, { type: audioType });
+    const audioData = await blobToDataUrl(audioBlob);
+    const duration = Math.ceil((Date.now() - recordingStartedAt) / 1000);
+
+    await apiCall("/chat", {
+      method: "POST",
+      body: JSON.stringify({
+        userId: currentUser.id,
+        message: chatInput.value,
+        audioData,
+        audioType,
+        duration
+      })
+    });
+
+    chatInput.value = "";
+    voiceStatus.textContent = "Voice note sent.";
+    setTimeout(() => {
+      voiceStatus.textContent = "";
+    }, 2000);
+  } catch (error) {
+    voiceStatus.textContent = error.message;
+  }
+}
+
+function blobToDataUrl(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
 }
 
 function scrollChatToBottom() {
@@ -580,6 +714,10 @@ function escapeHtml(text) {
     "'": "&#039;"
   };
   return String(text).replace(/[&<>"']/g, (match) => map[match]);
+}
+
+function escapeAttribute(text) {
+  return escapeHtml(text).replace(/`/g, "&#096;");
 }
 
 function renderUsername(username, isAdmin = false) {

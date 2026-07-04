@@ -6,7 +6,7 @@ const PORT = Number(process.env.PORT || process.argv[2]) || 3000;
 const ADMIN_USERNAMES = ["admin"];
 
 app.use(express.static(path.join(__dirname, "public")));
-app.use(express.json());
+app.use(express.json({ limit: "2mb" }));
 
 let users = [
   { id: 1, username: "admin", password: "pass123", points: 0 },
@@ -268,7 +268,7 @@ app.post("/matches", (req, res) => {
 });
 
 app.get("/predictions", (req, res) => {
-  res.json(predictions.map(publicPrediction));
+  res.json(predictions.filter((prediction) => isSettledResult(matchResults[prediction.matchId])).map(publicPrediction));
 });
 
 app.post("/predict", (req, res) => {
@@ -410,28 +410,50 @@ app.post("/scores/:matchId", (req, res) => {
 });
 
 app.post("/chat", (req, res) => {
-  const { userId, username, message } = req.body;
+  const { userId, message, audioData, audioType, duration } = req.body;
 
-  if (isAdmin(userId)) {
-    return res.status(403).json({ error: "Admin can only post official score announcements." });
+  const user = users.find((item) => item.id === Number(userId));
+  if (!user) {
+    return res.status(401).json({ error: "You must be logged in to chat." });
   }
 
-  if (!message || message.trim().length === 0) {
+  const trimmedMessage = String(message || "").trim();
+  const hasAudio = typeof audioData === "string" && audioData.length > 0;
+
+  if (!trimmedMessage && !hasAudio) {
     return res.status(400).json({ error: "Message cannot be empty." });
+  }
+
+  if (hasAudio && !isValidAudioMessage(audioData, audioType)) {
+    return res.status(400).json({ error: "Voice note must be a short audio recording." });
   }
 
   const chatMessage = {
     id: Date.now(),
-    userId,
-    username,
-    message: message.substring(0, 300),
+    userId: user.id,
+    username: user.username,
+    message: trimmedMessage.substring(0, 300),
+    type: hasAudio ? "voice" : "text",
     timestamp: new Date().toISOString()
   };
+
+  if (hasAudio) {
+    chatMessage.audioData = audioData;
+    chatMessage.audioType = audioType;
+    chatMessage.duration = Math.max(1, Math.min(Number(duration) || 1, 30));
+  }
 
   addChatMessage(chatMessage);
 
   res.json({ success: true, message: chatMessage });
 });
+
+function isValidAudioMessage(audioData, audioType) {
+  const allowedTypes = ["audio/webm", "audio/ogg", "audio/mpeg", "audio/mp4", "audio/wav"];
+  const type = String(audioType || "").split(";")[0];
+  const dataPattern = /^data:audio\/(webm|ogg|mpeg|mp4|wav)(;codecs=[^;]+)?;base64,[A-Za-z0-9+/=]+$/;
+  return allowedTypes.includes(type) && audioData.length <= 1500000 && dataPattern.test(audioData);
+}
 
 app.get("/chat", (req, res) => {
   res.json(chatMessages.slice(-50));
