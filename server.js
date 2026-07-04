@@ -145,6 +145,19 @@ function getPredictionPoints(prediction, result) {
   return 0;
 }
 
+function isSettledResult(result) {
+  return Boolean(result && result.homeScore !== null && result.awayScore !== null);
+}
+
+function publicPrediction(prediction) {
+  const result = matchResults[prediction.matchId];
+  return {
+    ...prediction,
+    settled: isSettledResult(result),
+    awardedPoints: isSettledResult(result) ? prediction.awardedPoints || 0 : 0
+  };
+}
+
 function recalculatePoints() {
   users.forEach((user) => {
     user.points = 0;
@@ -255,7 +268,7 @@ app.post("/matches", (req, res) => {
 });
 
 app.get("/predictions", (req, res) => {
-  res.json(predictions);
+  res.json(predictions.map(publicPrediction));
 });
 
 app.post("/predict", (req, res) => {
@@ -291,8 +304,9 @@ app.post("/predict", (req, res) => {
     return res.status(400).json({ error: "Scores must be non-negative integers." });
   }
 
+  const existingPrediction = predictions.find((item) => item.userId === Number(userId) && item.matchId === Number(matchId));
   const prediction = {
-    id: Date.now(),
+    id: existingPrediction ? existingPrediction.id : Date.now(),
     userId: Number(userId),
     username: user.username,
     matchId: Number(matchId),
@@ -304,8 +318,13 @@ app.post("/predict", (req, res) => {
     match
   };
 
-  predictions.unshift(prediction);
-  res.json({ success: true, prediction, userPoints: user.points });
+  if (existingPrediction) {
+    Object.assign(existingPrediction, prediction);
+  } else {
+    predictions.unshift(prediction);
+  }
+
+  res.json({ success: true, prediction: publicPrediction(existingPrediction || prediction), userPoints: user.points });
 });
 
 app.get("/check-predictions/:userId", (req, res) => {

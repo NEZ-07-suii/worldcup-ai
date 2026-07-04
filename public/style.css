@@ -64,6 +64,14 @@ body {
   margin-bottom: 10px;
 }
 
+.glow-text,
+.auth-title,
+.nav-logo {
+  text-shadow:
+    0 0 10px rgba(248, 209, 90, 0.48),
+    0 0 22px rgba(55, 200, 255, 0.3);
+}
+
 .auth-subtitle {
   text-align: center;
   color: #d7e9e1;
@@ -249,13 +257,74 @@ body {
 
 .hero {
   text-align: center;
-  margin-bottom: 40px;
+  margin-bottom: 26px;
+}
+
+.hero-official-logo {
+  display: block;
+  width: 118px;
+  height: 178px;
+  object-fit: contain;
+  margin: 0 auto 14px;
+  filter: drop-shadow(0 12px 28px rgba(0, 0, 0, 0.38));
+}
+
+.hero-brand {
+  font-size: 3.2rem;
+  font-weight: 950;
+  line-height: 1;
+  background: linear-gradient(135deg, #f8d15a, #ffffff 46%, #37c8ff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.hero-initiative {
+  margin-top: 8px;
+  color: #ffffff;
+  font-size: 1.15rem;
+  font-weight: 800;
 }
 
 .hero-tagline {
+  margin-top: 8px;
   font-size: 1.3rem;
   color: #f8d15a;
   font-weight: 600;
+}
+
+.live-strip {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 16px;
+  align-items: center;
+  background: rgba(4, 22, 28, 0.78);
+  border: 1px solid rgba(248, 209, 90, 0.34);
+  border-radius: 8px;
+  padding: 14px 18px;
+  margin-bottom: 22px;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.18);
+}
+
+.live-strip div {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  color: #f8d15a;
+  white-space: nowrap;
+}
+
+.live-strip p {
+  color: #d7f7ff;
+  overflow-wrap: anywhere;
+}
+
+.live-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #37c8ff;
+  box-shadow: 0 0 0 6px rgba(55, 200, 255, 0.12), 0 0 16px rgba(55, 200, 255, 0.85);
 }
 
 .leaderboard-title {
@@ -343,12 +412,30 @@ body {
   justify-content: center;
   border: 1px solid rgba(255, 255, 255, 0.24);
   border-radius: 6px;
-  background:
-    linear-gradient(90deg, rgba(55, 200, 255, 0.9) 0 33%, rgba(255, 255, 255, 0.95) 33% 66%, rgba(248, 209, 90, 0.9) 66% 100%);
-  color: #071322;
+  position: relative;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
   font-size: 0.78rem;
   font-weight: 900;
   box-shadow: 0 5px 14px rgba(0, 0, 0, 0.22);
+}
+
+.flag-badge img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.flag-badge span {
+  position: relative;
+  z-index: 1;
+  padding: 2px 4px;
+  border-radius: 4px;
+  background: rgba(2, 12, 18, 0.62);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
 }
 
 .flag-badge.mini {
@@ -393,6 +480,10 @@ body {
   color: #b0b0b0;
   margin: 8px 0;
   letter-spacing: 0;
+}
+
+.pending-score {
+  color: #c7f6ff;
 }
 
 .prediction-form {
@@ -602,6 +693,11 @@ body {
 .points-result {
   color: #ffd700;
   background: rgba(255, 215, 0, 0.12);
+}
+
+.pending-points {
+  color: #c7f6ff;
+  background: rgba(55, 200, 255, 0.12);
 }
 
 .empty-state {
@@ -946,9 +1042,31 @@ body {
     margin-bottom: 18px;
   }
 
+  .hero-official-logo {
+    width: 86px;
+    height: 130px;
+    margin-bottom: 10px;
+  }
+
+  .hero-brand {
+    font-size: 2.2rem;
+  }
+
+  .hero-initiative {
+    font-size: 1rem;
+  }
+
   .hero-tagline,
   .leaderboard-title {
-    font-size: 1.35rem;
+    font-size: 1.08rem;
+    line-height: 1.35;
+  }
+
+  .live-strip {
+    grid-template-columns: 1fr;
+    gap: 8px;
+    padding: 12px;
+    text-align: left;
   }
 
   .panel {
@@ -970,6 +1088,7 @@ body {
   .match-card {
     padding: 14px;
     margin-bottom: 0;
+    display: block;
   }
 
   .match-card:hover,
@@ -1000,6 +1119,7 @@ body {
   .team-name {
     font-size: 1rem;
     overflow-wrap: anywhere;
+    min-width: 0;
   }
 
   .vs-badge {
@@ -1036,6 +1156,7 @@ body {
     width: 100%;
     justify-content: flex-start;
     overflow-wrap: anywhere;
+    min-width: 0;
   }
 
   .prediction-score {

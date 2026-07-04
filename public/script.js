@@ -21,6 +21,7 @@ const leaderboardList = document.getElementById("leaderboardList");
 const chatMessages = document.getElementById("chatMessages");
 const chatForm = document.getElementById("chatForm");
 const chatInput = document.getElementById("chatInput");
+const liveUpdateText = document.getElementById("liveUpdateText");
 
 const userDisplay = document.getElementById("userDisplay");
 const logoutBtn = document.getElementById("logoutBtn");
@@ -28,22 +29,22 @@ const leaderboardBtn = document.getElementById("leaderboardBtn");
 const homeBtn = document.getElementById("homeBtn");
 
 const teamCodes = {
-  Argentina: "ARG",
-  Belgium: "BEL",
-  Brazil: "BRA",
-  Canada: "CAN",
-  Colombia: "COL",
-  Egypt: "EGY",
-  England: "ENG",
-  France: "FRA",
-  Mexico: "MEX",
-  Morocco: "MAR",
-  Norway: "NOR",
-  Paraguay: "PAR",
-  Portugal: "POR",
-  Spain: "ESP",
-  Switzerland: "SUI",
-  USA: "USA"
+  Argentina: { display: "ARG", flag: "ar" },
+  Belgium: { display: "BEL", flag: "be" },
+  Brazil: { display: "BRA", flag: "br" },
+  Canada: { display: "CAN", flag: "ca" },
+  Colombia: { display: "COL", flag: "co" },
+  Egypt: { display: "EGY", flag: "eg" },
+  England: { display: "ENG", flag: "gb-eng" },
+  France: { display: "FRA", flag: "fr" },
+  Mexico: { display: "MEX", flag: "mx" },
+  Morocco: { display: "MAR", flag: "ma" },
+  Norway: { display: "NOR", flag: "no" },
+  Paraguay: { display: "PAR", flag: "py" },
+  Portugal: { display: "POR", flag: "pt" },
+  Spain: { display: "ESP", flag: "es" },
+  Switzerland: { display: "SUI", flag: "ch" },
+  USA: { display: "USA", flag: "us" }
 };
 
 async function apiCall(url, options = {}) {
@@ -179,7 +180,9 @@ function connectLiveEvents() {
     appendChatMessage(JSON.parse(event.data));
   });
 
-  liveEvents.addEventListener("score", () => {
+  liveEvents.addEventListener("score", (event) => {
+    const update = JSON.parse(event.data);
+    renderLiveScoreUpdate(update);
     loadMatches();
     loadPredictions();
     loadLeaderboard();
@@ -240,6 +243,8 @@ function renderMatches(matches) {
     </div>
   `).join("");
 
+  renderLatestMatchUpdate(matches);
+
   document.querySelectorAll(".prediction-form").forEach((form) => {
     form.addEventListener("submit", submitPrediction);
   });
@@ -252,14 +257,28 @@ function renderMatches(matches) {
 function renderTeam(teamName, className = "") {
   return `
     <div class="team ${className}">
-      <span class="flag-badge">${getTeamCode(teamName)}</span>
+      ${renderFlag(teamName)}
       <span class="team-name">${escapeHtml(teamName)}</span>
     </div>
   `;
 }
 
 function getTeamCode(teamName) {
-  return teamCodes[teamName] || String(teamName || "").slice(0, 3).toUpperCase();
+  return getTeamMeta(teamName).display;
+}
+
+function getTeamMeta(teamName) {
+  const fallback = String(teamName || "").slice(0, 3).toUpperCase();
+  return teamCodes[teamName] || { display: fallback, flag: "" };
+}
+
+function renderFlag(teamName, extraClass = "") {
+  const meta = getTeamMeta(teamName);
+  const flagImg = meta.flag
+    ? `<img src="https://flagcdn.com/w80/${meta.flag}.png" alt="${escapeHtml(teamName)} flag" loading="lazy" />`
+    : "";
+
+  return `<span class="flag-badge ${extraClass}" title="${escapeHtml(teamName)}">${flagImg}<span>${meta.display}</span></span>`;
 }
 
 function renderPredictionForm(match) {
@@ -282,7 +301,7 @@ function renderPredictionForm(match) {
 
 function renderMatchResult(match) {
   if (!match.result || match.result.homeScore === null || match.result.awayScore === null) {
-    return "";
+    return `<p class="match-details pending-score">Awaiting final result. Predictions earn no points yet.</p>`;
   }
 
   return `<p class="match-details live-score">Final: ${match.homeTeam} ${match.result.homeScore} - ${match.result.awayScore} ${match.awayTeam}</p>`;
@@ -393,18 +412,44 @@ function renderPredictions(predictions) {
     return;
   }
 
-  predictionsList.innerHTML = predictions.slice(0, 10).map((pred) => `
+  predictionsList.innerHTML = predictions.slice(0, 10).map((pred) => {
+    const hasResult = pred.awardedPoints > 0 || isPredictionSettled(pred);
+    const pointsText = hasResult ? `${pred.awardedPoints || 0} pts awarded` : "Points pending final result";
+
+    return `
     <div class="prediction-item">
       <strong>${escapeHtml(pred.username)}</strong>
       <div class="prediction-match">
-        <span class="flag-team"><span class="flag-badge mini">${getTeamCode(pred.match.homeTeam)}</span>${escapeHtml(pred.match.homeTeam)}</span>
+        <span class="flag-team">${renderFlag(pred.match.homeTeam, "mini")}${escapeHtml(pred.match.homeTeam)}</span>
         <span class="prediction-score">${pred.homeScore} - ${pred.awayScore}</span>
-        <span class="flag-team"><span class="flag-badge mini">${getTeamCode(pred.match.awayTeam)}</span>${escapeHtml(pred.match.awayTeam)}</span>
+        <span class="flag-team">${renderFlag(pred.match.awayTeam, "mini")}${escapeHtml(pred.match.awayTeam)}</span>
       </div>
       <small class="prediction-result">${pred.predictedWinner}</small>
-      <small class="prediction-result points-result">${pred.awardedPoints || 0} pts awarded</small>
+      <small class="prediction-result points-result ${hasResult ? "" : "pending-points"}">${pointsText}</small>
     </div>
-  `).join("");
+  `;
+  }).join("");
+}
+
+function isPredictionSettled(prediction) {
+  return prediction && prediction.settled === true;
+}
+
+function renderLiveScoreUpdate(update) {
+  if (!liveUpdateText || !update || !update.match) return;
+  liveUpdateText.textContent = `${update.match.homeTeam} ${update.homeScore} - ${update.awayScore} ${update.match.awayTeam}. Leaderboard refreshed.`;
+}
+
+function renderLatestMatchUpdate(matches) {
+  if (!liveUpdateText) return;
+
+  const latestFinal = matches.find((match) => match.result && match.result.homeScore !== null && match.result.awayScore !== null);
+  if (!latestFinal) {
+    liveUpdateText.textContent = "Final scores and points will appear here as soon as admin announces them.";
+    return;
+  }
+
+  liveUpdateText.textContent = `Latest final: ${latestFinal.homeTeam} ${latestFinal.result.homeScore} - ${latestFinal.result.awayScore} ${latestFinal.awayTeam}.`;
 }
 
 async function loadLeaderboard() {
