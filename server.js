@@ -1,9 +1,11 @@
 const express = require("express");
+const fs = require("fs");
 const path = require("path");
 
 const app = express();
 const PORT = Number(process.env.PORT || process.argv[2]) || 3000;
 const ADMIN_USERNAMES = ["admin"];
+const DATA_FILE = path.join(__dirname, "data.json");
 
 app.use(express.static(path.join(__dirname, "public")));
 app.use(express.json({ limit: "2mb" }));
@@ -103,7 +105,7 @@ let currentUser = null;
 let chatMessages = [];
 let eventClients = [];
 
-const matchResults = {
+let matchResults = {
   1: { homeScore: null, awayScore: null },
   2: { homeScore: null, awayScore: null },
   3: { homeScore: null, awayScore: null },
@@ -147,6 +149,13 @@ function getPredictionPoints(prediction, result) {
 
 function isSettledResult(result) {
   return Boolean(result && result.homeScore !== null && result.awayScore !== null);
+}
+
+function parseScore(value) {
+  if (value === null || value === undefined || value === "") return null;
+  const score = Number(value);
+  if (!Number.isInteger(score) || score < 0) return null;
+  return score;
 }
 
 function publicPrediction(prediction) {
@@ -308,11 +317,11 @@ app.post("/predict", (req, res) => {
     return res.status(400).json({ error: "Predictions are closed after the final score is announced." });
   }
 
-  const home = Number(homeScore);
-  const away = Number(awayScore);
+  const home = parseScore(homeScore);
+  const away = parseScore(awayScore);
 
-  if (!Number.isInteger(home) || !Number.isInteger(away) || home < 0 || away < 0) {
-    return res.status(400).json({ error: "Scores must be non-negative integers." });
+  if (home === null || away === null) {
+    return res.status(400).json({ error: "Scores must be non-negative integers. 0 is allowed." });
   }
 
   const existingPrediction = predictions.find((item) => item.userId === Number(userId) && item.matchId === Number(matchId));
@@ -387,11 +396,11 @@ app.post("/scores/:matchId", (req, res) => {
     return res.status(404).json({ error: "Match not found." });
   }
 
-  const home = Number(homeScore);
-  const away = Number(awayScore);
+  const home = parseScore(homeScore);
+  const away = parseScore(awayScore);
 
-  if (!Number.isInteger(home) || !Number.isInteger(away) || home < 0 || away < 0) {
-    return res.status(400).json({ error: "Scores must be non-negative integers." });
+  if (home === null || away === null) {
+    return res.status(400).json({ error: "Scores must be non-negative integers. 0 is allowed." });
   }
 
   matchResults[matchId] = { homeScore: home, awayScore: away };

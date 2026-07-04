@@ -309,8 +309,8 @@ function renderPredictionForm(match, existingPrediction) {
   }
 
   const isClosed = match.result && match.result.homeScore !== null && match.result.awayScore !== null;
-  const homeValue = existingPrediction ? existingPrediction.homeScore : "";
-  const awayValue = existingPrediction ? existingPrediction.awayScore : "";
+  const homeValue = existingPrediction ? existingPrediction.homeScore : 0;
+  const awayValue = existingPrediction ? existingPrediction.awayScore : 0;
   const savedMessage = existingPrediction
     ? `<p class="locked-pick">Your locked pick: ${existingPrediction.homeScore} - ${existingPrediction.awayScore}</p>`
     : "";
@@ -319,9 +319,9 @@ function renderPredictionForm(match, existingPrediction) {
     <form class="prediction-form" data-match-id="${match.id}">
       ${savedMessage}
       <div class="prediction-inputs">
-        <input type="number" min="0" max="10" placeholder="0" value="${homeValue}" ${isClosed ? "disabled" : ""} required />
+        <input type="number" min="0" max="10" step="1" inputmode="numeric" value="${homeValue}" ${isClosed ? "disabled" : ""} required />
         <span class="score-divider">:</span>
-        <input type="number" min="0" max="10" placeholder="0" value="${awayValue}" ${isClosed ? "disabled" : ""} required />
+        <input type="number" min="0" max="10" step="1" inputmode="numeric" value="${awayValue}" ${isClosed ? "disabled" : ""} required />
       </div>
       <button type="submit" class="predict-btn" ${isClosed ? "disabled" : ""}>${existingPrediction ? "Update Pick" : "Predict"}</button>
       <p class="form-message"></p>
@@ -368,6 +368,13 @@ async function submitPrediction(event) {
   const form = event.target;
   const inputs = form.querySelectorAll("input[type='number']");
   const messageDiv = form.querySelector(".form-message");
+  const homeScore = readScoreInput(inputs[0]);
+  const awayScore = readScoreInput(inputs[1]);
+
+  if (homeScore === null || awayScore === null) {
+    messageDiv.textContent = "Pick a score for both teams. 0 is allowed.";
+    return;
+  }
 
   try {
     messageDiv.textContent = "Submitting...";
@@ -377,8 +384,8 @@ async function submitPrediction(event) {
       body: JSON.stringify({
         userId: currentUser.id,
         matchId: Number(form.dataset.matchId),
-        homeScore: Number(inputs[0].value),
-        awayScore: Number(inputs[1].value)
+        homeScore,
+        awayScore
       })
     });
 
@@ -396,6 +403,15 @@ async function submitPrediction(event) {
   } catch (error) {
     messageDiv.textContent = error.message;
   }
+}
+
+function readScoreInput(input) {
+  const rawValue = String(input.value).trim();
+  if (rawValue === "") return null;
+
+  const score = Number(rawValue);
+  if (!Number.isInteger(score) || score < 0) return null;
+  return score;
 }
 
 async function submitResult(event) {
