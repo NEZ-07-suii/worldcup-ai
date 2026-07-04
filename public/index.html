@@ -9,9 +9,9 @@
 <body>
   <div id="authPage" class="page">
     <div class="auth-container">
-      <img class="official-logo-mark" src="world-cup-26-logo.svg" alt="FIFA World Cup 26" />
+      <div class="creator-logo-mark">NZ</div>
       <h1 class="auth-title">NEZ FIFA</h1>
-      <p class="auth-subtitle">Predict. Compete. Dominate.</p>
+      <p class="auth-subtitle">Private score battles for the boys.</p>
 
       <div class="auth-tabs">
         <button id="loginTab" class="auth-tab-btn active" data-tab="login">Login</button>
@@ -37,15 +37,13 @@
   <div id="mainPage" class="page" style="display: none;">
     <header class="fifa-header">
       <div class="fifa-topbar">
-        <button class="menu-btn" type="button" aria-label="Menu">☰</button>
+        <button class="menu-btn" type="button" aria-label="Menu">#</button>
         <strong class="fifa-wordmark">NEZ FIFA</strong>
         <div class="topbar-links">
           <button id="homeBtn" class="nav-btn">Matches</button>
-          <button id="leaderboardBtn" class="nav-btn">Standings</button>
-          <span>Rewards</span>
-          <span>Store</span>
-          <span>Collect</span>
-          <span>English</span>
+          <button id="leaderboardBtn" class="nav-btn">Table</button>
+          <span>Chat</span>
+          <span>Receipts</span>
           <span id="userDisplay" class="user-display"></span>
           <button id="logoutBtn" class="nav-btn logout-btn">Logout</button>
         </div>
@@ -55,46 +53,44 @@
     <div id="homePage" class="content-page">
       <div id="skillIssueAlert" class="skill-issue-alert" style="display: none;"></div>
 
-      <section class="sponsor-strip">
-        <span>Presented by</span>
-        <strong>ADI | PREDICTSTREET</strong>
-      </section>
-
       <section class="predictor-hero">
         <div class="predictor-hero-inner">
           <div class="predictor-copy">
-            <p class="hero-kicker">Swalih's Initiative</p>
-            <h2>MATCH PREDICTOR</h2>
-            <p>Predict the scoreline for every FIFA World Cup 2026 match and challenge your friends.</p>
-            <a class="predict-now-btn" href="#matchesPanel">Predict Now</a>
+            <p class="hero-kicker">Swalih x Nez private league</p>
+            <h2>Drop your score before kickoff.</h2>
+            <p>No official noise. Just wild calls, saved receipts, live chat, and a table that exposes everyone after full time.</p>
+            <div class="hero-actions">
+              <a class="predict-now-btn" href="#matchesPanel">Make a pick</a>
+              <span class="creator-pill">10 pts exact score</span>
+            </div>
           </div>
 
           <div class="hero-scoreboard" aria-label="Example match prediction">
-            <img src="https://flagcdn.com/w160/mx.png" alt="Mexico flag" />
-            <div class="hero-score-input"></div>
+            <span class="creator-avatar">S</span>
+            <div class="hero-score-input">2</div>
             <strong>VS</strong>
-            <div class="hero-score-input"></div>
-            <img src="https://flagcdn.com/w160/za.png" alt="South Africa flag" />
-            <div class="score-step step-two">2</div>
-            <div class="score-step step-three">3</div>
+            <div class="hero-score-input">1</div>
+            <span class="creator-avatar nez">N</span>
+            <div class="score-step step-two">saved</div>
+            <div class="score-step step-three">private until result</div>
           </div>
         </div>
 
         <div class="predictor-feature-grid">
           <article class="predictor-feature-card">
-            <span>▦</span>
-            <h3>Make Your Predictions</h3>
-            <p>Pick the exact score before results are announced.</p>
+            <span>01</span>
+            <h3>Lock the score</h3>
+            <p>Make your call before the admin drops the result.</p>
           </article>
           <article class="predictor-feature-card">
-            <span>⚑</span>
-            <h3>Compete with Friends</h3>
-            <p>Chat live, compare calls, and follow every result.</p>
+            <span>02</span>
+            <h3>Talk through it</h3>
+            <p>Chat, voice note, and react while the match is on.</p>
           </article>
           <article class="predictor-feature-card">
-            <span>♕</span>
-            <h3>Top the Leaderboards</h3>
-            <p>Points are awarded only after the final score.</p>
+            <span>03</span>
+            <h3>Check receipts</h3>
+            <p>Predictions reveal only after full time.</p>
           </article>
         </div>
       </section>
@@ -104,9 +100,9 @@
         <section class="live-strip" aria-live="polite">
           <div>
             <span class="live-dot"></span>
-            <strong>Official Live Updates</strong>
+            <strong>Group Feed</strong>
           </div>
-          <p id="liveUpdateText">Final scores and points will appear here as soon as admin announces them.</p>
+          <p id="liveUpdateText">Final scores and points land here when the result is posted.</p>
         </section>
 
         <section id="matchesPanel" class="panel">
@@ -143,7 +139,7 @@
     <div id="leaderboardPage" class="content-page" style="display: none;">
       <div class="page-shell">
         <header class="hero">
-          <h2 class="leaderboard-title">Global Leaderboard</h2>
+          <h2 class="leaderboard-title">Private League Table</h2>
         </header>
 
         <section class="panel">

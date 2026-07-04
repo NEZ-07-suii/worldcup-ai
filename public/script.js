@@ -289,7 +289,7 @@ function renderFlag(teamName, extraClass = "") {
 
 function renderPredictionForm(match) {
   if (currentUser && currentUser.isAdmin) {
-    return `<p class="admin-only-note">Official account: announce the final score after the match.</p>`;
+    return `<p class="admin-only-note">Host mode: post the final score after the match.</p>`;
   }
 
   return `
@@ -321,13 +321,13 @@ function renderResultForm(match) {
 
   return `
     <form class="result-form" data-match-id="${match.id}">
-      <p class="admin-label">Admin result</p>
+      <p class="admin-label">Host result</p>
       <div class="prediction-inputs">
         <input type="number" min="0" max="20" placeholder="0" value="${homeValue}" required />
         <span class="score-divider">:</span>
         <input type="number" min="0" max="20" placeholder="0" value="${awayValue}" required />
       </div>
-      <button type="submit" class="result-btn">Announce result and award points</button>
+      <button type="submit" class="result-btn">Post result and award points</button>
       <p class="form-message"></p>
     </form>
   `;
@@ -363,7 +363,7 @@ async function submitPrediction(event) {
       matchesList.classList.remove("shake-animation");
     }, 500);
 
-    messageDiv.textContent = "Prediction saved privately. It will appear after the final result.";
+    messageDiv.textContent = "Pick locked. Receipts open after the final result.";
     form.reset();
 
     setTimeout(() => {
@@ -383,7 +383,7 @@ async function submitResult(event) {
   const messageDiv = form.querySelector(".form-message");
 
   try {
-    messageDiv.textContent = "Announcing result...";
+    messageDiv.textContent = "Posting result...";
     const result = await apiCall(`/scores/${form.dataset.matchId}`, {
       method: "POST",
       body: JSON.stringify({
@@ -394,7 +394,7 @@ async function submitResult(event) {
     });
 
     const awardedCount = result.awardedPredictions.filter((prediction) => prediction.points > 0).length;
-    messageDiv.textContent = `Result announced. ${awardedCount} prediction(s) got points.`;
+    messageDiv.textContent = `Result posted. ${awardedCount} prediction(s) got points.`;
     loadMatches();
     loadPredictions();
     loadLeaderboard();
@@ -414,7 +414,7 @@ async function loadPredictions() {
 
 function renderPredictions(predictions) {
   if (!predictions.length) {
-    predictionsList.innerHTML = '<p class="empty-state">Predictions are hidden until each match result is announced.</p>';
+    predictionsList.innerHTML = '<p class="empty-state">Receipts stay hidden until each result is posted.</p>';
     return;
   }
 
@@ -466,7 +466,7 @@ function renderRevealedPrediction(prediction) {
 
 function renderLiveScoreUpdate(update) {
   if (!liveUpdateText || !update || !update.match) return;
-  liveUpdateText.textContent = `${update.match.homeTeam} ${update.homeScore} - ${update.awayScore} ${update.match.awayTeam}. Leaderboard refreshed.`;
+  liveUpdateText.textContent = `${update.match.homeTeam} ${update.homeScore} - ${update.awayScore} ${update.match.awayTeam}. Table refreshed.`;
 }
 
 function renderLatestMatchUpdate(matches) {
@@ -474,7 +474,7 @@ function renderLatestMatchUpdate(matches) {
 
   const latestFinal = matches.find((match) => match.result && match.result.homeScore !== null && match.result.awayScore !== null);
   if (!latestFinal) {
-    liveUpdateText.textContent = "Final scores and points will appear here as soon as admin announces them.";
+    liveUpdateText.textContent = "Final scores and points land here when the result is posted.";
     return;
   }
 
@@ -501,7 +501,7 @@ function renderLeaderboard(leaderboard) {
     const isCurrentUser = currentUser && currentUser.username === entry.username;
     const medalClass = rank === 1 ? "gold" : rank === 2 ? "silver" : rank === 3 ? "bronze" : "";
     const itemClass = rank === 1 ? "leaderboard-item champion-item" : "leaderboard-item";
-    const label = rank === 1 ? '<span class="champion-badge">Top Predictor</span>' : "";
+    const label = rank === 1 ? '<span class="champion-badge">Main Character</span>' : "";
     const currentBadge = isCurrentUser ? '<span class="current-badge">You</span>' : "";
 
     return `
@@ -724,7 +724,7 @@ function renderUsername(username, isAdmin = false) {
   const safeName = escapeHtml(username);
   if (!isAdmin) return safeName;
 
-  return `${safeName}<span class="admin-star" title="Official admin" aria-label="Official admin"></span>`;
+  return `${safeName}<span class="admin-star" title="Host account" aria-label="Host account"></span>`;
 }
 
 function init() {
